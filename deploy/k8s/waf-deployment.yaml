@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neuralwaf-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: waf-config
+  namespace: neuralwaf-system
+data:
+  waf.yaml: |
+    data_plane:
+      listen_address: ":8080"
+      max_body_bytes: 2097152
+      max_active_connections: 100000
+      read_header_timeout: 2s
+      idle_timeout: 60s
+      upstream_url: "http://core-backend.prod.svc.cluster.local:8080"
+    control_plane:
+      listen_address: ":9090"
+      metrics_path: "/metrics"
+      health_path: "/healthz"
+      readiness_path: "/readyz"
+    inference_plane:
+      target_address: "dl-inference-engine.ml-system.svc.cluster.local:50051"
+      pool_size: 16
+      timeout_microseconds: 3500
+      max_concurrent_streams: 4096
+      fail_open_on_timeout: true
+    telemetry_plane:
+      brokers:
+        - "kafka-broker.telemetry.svc.cluster.local:9092"
+      topic: "zima-mdr.security.waf.anomalies"
+      queue_capacity: 65536
+      worker_count: 4
+      batch_size: 500
+      batch_timeout: 20ms
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neuralwaf-edge-proxy
+  namespace: neuralwaf-system
+  labels:
+    app.kubernetes.io/name: neuralwaf
+    app.kubernetes.io/component: data-plane
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: neuralwaf
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: neuralwaf
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: edge-proxy
+          image: enterprise/neuralwaf:v2.4.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http-data
+              containerPort: 8080
+            - name: http-control
+              containerPort: 9090
+          resources:
+            requests:
+              cpu: 500m
+              memory: 256Mi
+            limits:
+              cpu: 4000m
+              memory: 1024Mi
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/configs
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9090
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 9090
+            initialDelaySeconds: 3
+            periodSeconds: 5
+      volumes:
+        - name: config-volume
+          configMap:
+            name: waf-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neuralwaf-service
+  namespace: neuralwaf-system
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: neuralwaf
+  ports:
+    - name: http-traffic
+      port: 80
+      targetPort: 8080
+    - name: metrics
+      port: 9090
+      targetPort: 9090

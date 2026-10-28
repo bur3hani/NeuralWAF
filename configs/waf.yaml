@@ -1,0 +1,39 @@
+# NeuralWAF Production Configuration
+# Separation of Data, Control, and Telemetry Planes
+
+data_plane:
+  listen_address: ":8080"
+  max_body_bytes: 2097152 # 2MB limit per request
+  max_active_connections: 100000
+  read_header_timeout: 2s
+  idle_timeout: 60s
+  upstream_url: "http://127.0.0.1:8000"
+
+control_plane:
+  listen_address: ":9090"
+  metrics_path: "/metrics"
+  health_path: "/healthz"
+  readiness_path: "/readyz"
+
+inference_plane:
+  target_address: "127.0.0.1:50051"
+  pool_size: 16
+  timeout_microseconds: 3500 # Strict 3.5ms SLA
+  max_concurrent_streams: 4096
+  fail_open_on_timeout: true
+  circuit_breaker_threshold: 50
+  circuit_breaker_cooldown: 5s
+  model_name: "lstm_autoencoder_v2"
+  anomaly_threshold: 0.650
+
+telemetry_plane:
+  brokers:
+    - "127.0.0.1:9092"
+  topic: "zima-mdr.security.waf.anomalies"
+  queue_capacity: 65536 # Non-blocking ring buffer capacity
+  worker_count: 4
+  batch_size: 500
+  batch_timeout: 20ms
+  max_payload_bytes: 4096 # Payload truncation to protect memory
+  compression_codec: "snappy"
+  required_acks: 1

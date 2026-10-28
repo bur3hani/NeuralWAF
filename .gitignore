@@ -1,0 +1,35 @@
+# Dependencies & Build Artefacts
+node_modules/
+build/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# BuruOps Zero-Secrets Policy: Secrets, Keys, Credentials & Encrypted Stores
+# NEVER commit credentials, private keys, or active runtime vaults to Git!
+.env*
+!.env.example
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+*.enc
+*.secret
+*.token
+*.htpasswd
+auth.db
+credentials.json
+credentials.enc
+neuralwaf/data/credentials.enc
+neuralwaf/data/*.enc
+neuralwaf/config.secure.php
+neuralwaf/storage/tokens/*
+neuralwaf/storage/sessions/*
+
+# Playwright & Testing artifacts
+.playwright-cli/
+*.png
+.tempmediaStorage/
+test-results/

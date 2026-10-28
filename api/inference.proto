@@ -1,0 +1,135 @@
+// @license
+// SPDX-License-Identifier: Apache-2.0
+//
+// Enterprise Deep Learning Web Application Firewall (NeuralWAF)
+// Protocol Buffer Specification: Data Plane to LSTM Autoencoder Inference Engine
+
+syntax = "proto3";
+
+package waf.inference.v1;
+
+option go_package = "github.com/enterprise-security/deepwaf/api;inferencev1";
+option java_multiple_files = true;
+option java_package = "com.enterprise.waf.inference.v1";
+
+// InferenceService defines the low-latency gRPC contract between the
+// Golang Edge Proxy data plane and the Python/C++ TensorRT/TorchScript
+// deep learning inference server.
+service InferenceService {
+  // PredictAnomaly evaluates a single tokenized HTTP request stream against
+  // the trained LSTM Autoencoder model and returns reconstruction loss.
+  rpc PredictAnomaly(InferenceRequest) returns (InferenceResponse);
+
+  // BatchPredictAnomaly provides batched inference for ultra-high throughput
+  // pipelines, amortizing tensor memory transfer overheads.
+  rpc BatchPredictAnomaly(BatchInferenceRequest) returns (BatchInferenceResponse);
+
+  // HealthCheck verifies model availability, GPU warm-up status, and current latency bounds.
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// TokenSequence represents a normalized sequence of token identifiers
+// consumed directly as input embedding vectors by the LSTM Autoencoder.
+message TokenSequence {
+  // Vocabulary indices representing tokenized byte pairs or character n-grams
+  repeated uint32 token_ids = 1;
+  
+  // Original length of the sequence before fixed-window padding or truncation
+  uint32 raw_length = 2;
+  
+  // Categorical segment identifier (e.g., URI=1, Headers=2, Body=3)
+  uint32 segment_id = 3;
+}
+
+// InferenceRequest encapsulates preprocessed, tokenized HTTP primitives.
+// Note: Per architectural requirements, the Edge Proxy acts strictly as
+// a data ingestion pipeline without static regex matching.
+message InferenceRequest {
+  // Unique UUIDv4 for distributed request tracing across planes
+  string request_id = 1;
+
+  // Source client IP (IPv4 or IPv6)
+  string client_ip = 2;
+
+  // Normalized HTTP Method (GET, POST, etc.)
+  string method = 3;
+
+  // Raw URI path and query string (tokenized)
+  TokenSequence uri_tokens = 4;
+
+  // Serialized and tokenized header streams
+  TokenSequence header_tokens = 5;
+
+  // Streaming body payload tokens (bounded by MaxInspectionBytes)
+  TokenSequence body_tokens = 6;
+
+  // Combined numerical tensor shape: [batch_size=1, max_sequence_length]
+  repeated uint32 tensor_shape = 7;
+
+  // Nanosecond-precision ingest timestamp from Edge Proxy
+  int64 timestamp_ns = 8;
+
+  // Client TLS JA3/JA4 fingerprint hash
+  string tls_fingerprint = 9;
+
+  // Request priority (0 = Standard, 1 = Elevated verification)
+  uint32 priority = 10;
+}
+
+// InferenceResponse returns the deep learning anomaly determination.
+message InferenceResponse {
+  // Correlated request UUID
+  string request_id = 1;
+
+  // Binary verdict: true if reconstruction_error >= configured threshold
+  bool is_anomaly = 2;
+
+  // Normalized anomaly score [0.0, 1.0] calculated from reconstruction distribution
+  float anomaly_score = 3;
+
+  // Mean Squared Error (MSE) between input sequence and LSTM decoder output
+  // L = (1/N) * sum((x_i - x_hat_i)^2)
+  float reconstruction_error = 4;
+
+  // Dynamic anomaly threshold active at the time of evaluation
+  float threshold = 5;
+
+  // Inference execution latency measured on the inference server in microseconds
+  uint64 inference_latency_us = 6;
+
+  // Model metadata for auditing and zero-downtime Canary deployments
+  string model_version = 7;
+
+  // Sub-sequence attribution weights highlighting tokens with highest reconstruction loss
+  map<string, float> token_loss_attributions = 8;
+
+  // Diagnostic flags (e.g., tensor_clipped, degraded_mode)
+  repeated string diagnostic_tags = 9;
+}
+
+message BatchInferenceRequest {
+  string batch_id = 1;
+  repeated InferenceRequest requests = 2;
+}
+
+message BatchInferenceResponse {
+  string batch_id = 1;
+  repeated InferenceResponse responses = 2;
+  uint64 batch_latency_us = 3;
+}
+
+message HealthCheckRequest {
+  string client_version = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_WARMING_UP = 3;
+  }
+  ServingStatus status = 1;
+  string active_model = 2;
+  float p99_latency_us = 3;
+}

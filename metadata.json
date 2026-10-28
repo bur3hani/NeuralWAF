@@ -1,0 +1,7 @@
+{
+  "name": "NeuralWAF Enterprise Architecture & Go Core",
+  "description": "Production-grade foundational codebase and root directory Web Application Firewall for PHP and Node.js on standard web hosting, featuring pre-execution interception, deep learning sequence scoring, and D3 origin density analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
