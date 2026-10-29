@@ -1,0 +1,42 @@
+{
+  "name": "buruops/neuralwaf",
+  "description": "High-Performance Pure PHP Root Web Application Firewall with Deep Learning LSTM Sequence Reconstruction Anomaly Detection",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "BuruOps Engineering Team",
+      "email": "engr.buru@gmail.com"
+    }
+  ],
+  "require": {
+    "php": "^7.4 || ^8.0 || ^8.1 || ^8.2 || ^8.3",
+    "ext-json": "*",
+    "ext-openssl": "*",
+    "ext-mbstring": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5 || ^10.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "NeuralWaf\\": "neuralwaf/src/"
+    },
+    "files": [
+      "neuralwaf/bootstrap.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "NeuralWaf\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "lint": "php -l neuralwaf/bootstrap.php"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}

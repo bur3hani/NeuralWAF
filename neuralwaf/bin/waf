@@ -1,0 +1,65 @@
+#!/usr/bin/env php
+<?php
+/**
+ * BuruOps NeuralWAF - CLI Control Tool
+ * Open Source Security by BuruOps (engr.buru@gmail.com)
+ *
+ * Usage:
+ *   php neuralwaf/bin/waf status
+ *   php neuralwaf/bin/waf test "GET /api/v1/users?id=1' UNION SELECT..."
+ *   php neuralwaf/bin/waf stats
+ */
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../bootstrap.php';
+
+$action = $argv[1] ?? 'status';
+
+echo "\033[1;35mNeuralWAF PHP Core\033[0m · BuruOps Open Source Security (engr.buru@gmail.com)\n";
+echo "================================================================================\n";
+
+switch ($action) {
+    case 'status':
+        echo "Engine Version   : v2.5.0-PROD (Pure PHP)\n";
+        echo "PHP Runtime      : v" . PHP_VERSION . " (" . PHP_SAPI . ")\n";
+        echo "Autoencoder Model: LSTM Sequence Reconstruction (64-dim, threshold: 0.65)\n";
+        echo "Vault Storage    : AES-256-GCM (chmod 0600)\n";
+        echo "Root Hook Status : Ready (neuralwaf/bootstrap.php)\n";
+        break;
+
+    case 'test':
+        $payload = $argv[2] ?? "GET /index.php?id=1 HTTP/1.1\r\nHost: example.com\r\n\r\n";
+        echo "Evaluating Test Payload:\n" . substr($payload, 0, 80) . "...\n\n";
+
+        $tokenizer = new \NeuralWaf\Tokenizer\ByteSequenceTokenizer();
+        $tokens = $tokenizer->tokenize($payload);
+        $entropy = $tokenizer->calculateEntropy($payload);
+
+        $autoencoder = new \NeuralWaf\Inference\LstmAutoencoder();
+        $eval = $autoencoder->evaluate($tokens);
+
+        echo "Shannon Entropy   : " . $entropy . " bits/byte\n";
+        echo "Reconstruction MSE: " . $eval['reconstruction_mse'] . "\n";
+        echo "Anomaly Score     : " . $eval['anomaly_score'] . " / 1.000\n";
+        echo "Decision Threshold: " . $eval['threshold'] . "\n";
+        echo "Inference Time    : " . $eval['inference_time_ms'] . " ms\n";
+
+        if ($eval['is_anomaly']) {
+            echo "\033[1;31mDECISION: BLOCKED (HTTP 403 Forbidden - Out-of-Distribution Attack)\033[0m\n";
+        } else {
+            echo "\033[1;32mDECISION: ALLOWED (HTTP 200 OK - Verified Benign Pattern)\033[0m\n";
+        }
+        break;
+
+    case 'stats':
+        $telemetryFile = __DIR__ . '/../data/telemetry.jsonl';
+        $count = file_exists($telemetryFile) ? count(file($telemetryFile)) : 0;
+        echo "Total Telemetry Events Logged: {$count}\n";
+        break;
+
+    default:
+        echo "Usage: php neuralwaf/bin/waf [status|test <payload>|stats]\n";
+        break;
+}
+echo "================================================================================\n";

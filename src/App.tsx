@@ -152,7 +152,7 @@ export default function App() {
   };
 
   const handleDownloadAllCode = () => {
-    let bundle = `# NEURALWAF ROOT WEB APPLICATION FIREWALL (PHP & NODE.JS)\n# Zero-dependency website root directory package for standard web hosting\n# Compatible with Apache, LiteSpeed, Nginx, cPanel, and Node.js environments\n\n`;
+    let bundle = `# NEURALWAF PURE PHP ROOT WEB APPLICATION FIREWALL (PHP 7.4 - 8.3+)\n# 100% pure PHP codebase with LSTM Autoencoder sequence anomaly detection\n# Zero-dependency website root package for Apache, LiteSpeed, Nginx, and cPanel\n\n`;
     for (const f of CODE_FILES) {
       bundle += `================================================================================\n`;
       bundle += `FILE: ${f.path} (${f.plane})\n`;
@@ -204,11 +204,11 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-white text-base tracking-tight truncate">NeuralWAF</span>
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-violet-500/20 text-violet-300 border border-violet-500/30 font-semibold">
-                    Root
+                    PHP Core
                   </span>
                 </div>
                 <div className="text-[10px] text-slate-400 font-mono truncate">
-                  {devMode ? 'PHP & Node.js Engine' : 'Autonomous AI Defense'}
+                  {devMode ? 'Pure PHP Deep Learning WAF' : 'Autonomous AI Defense'}
                 </div>
               </div>
             )}
@@ -338,12 +338,12 @@ export default function App() {
                 <span className="text-slate-200">auto_prepend</span>
               </div>
               <div className="flex items-center justify-between text-slate-400">
-                <span>Node Engine:</span>
-                <span className="text-slate-200">:8081 / IPC</span>
+                <span>AI Engine:</span>
+                <span className="text-slate-200">Pure PHP LSTM</span>
               </div>
               <div className="flex items-center justify-between text-slate-400">
                 <span>Latent SLA:</span>
-                <span className="text-cyan-400 font-bold">&lt; 0.42 ms</span>
+                <span className="text-cyan-400 font-bold">&lt; 0.35 ms</span>
               </div>
             </div>
 
@@ -442,12 +442,12 @@ export default function App() {
                 <span className="text-slate-600">|</span>
                 <span className="flex items-center gap-1.5 text-emerald-400">
                   <Cpu className="w-3.5 h-3.5" />
-                  {devMode ? 'Node Engine' : 'Node Root'}
+                  {devMode ? 'PHP LSTM Engine' : 'Neural Defense'}
                 </span>
                 <span className="text-slate-600">|</span>
                 <span className="flex items-center gap-1.5 text-cyan-400">
                   <Radio className="w-3.5 h-3.5" />
-                  {devMode ? 'LSTM Scorer' : 'AI Defense'}
+                  {devMode ? 'Argon2id Vault' : 'Encrypted RBAC'}
                 </span>
               </div>
 

@@ -35,7 +35,7 @@ export const CodeExplorer: React.FC<{ initialFilePath?: string }> = ({ initialFi
   const filteredFiles = useMemo(() => {
     let files = CODE_FILES;
     if (activeStackFilter === 'php') {
-      files = files.filter(f => f.plane === 'PHP Root Interceptor' || f.path.startsWith('neuralwaf/') && f.language === 'php' || f.language === 'ini' || f.language === 'htaccess');
+      files = files.filter(f => f.plane === 'PHP Root Interceptor' || f.language === 'php' || f.path.startsWith('neuralwaf/') || f.path === 'composer.json' || f.path === '.htaccess' || f.path === '.user.ini');
     } else if (activeStackFilter === 'node') {
       files = files.filter(f => f.plane === 'Node.js Root Engine' || f.language === 'javascript');
     } else if (activeStackFilter === 'enterprise') {
@@ -198,7 +198,7 @@ export const CodeExplorer: React.FC<{ initialFilePath?: string }> = ({ initialFi
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                 }`}
               >
-                PHP Root
+                PHP Core WAF
               </button>
               <button
                 onClick={() => setActiveStackFilter('node')}
