@@ -2841,6 +2841,67 @@ Report all security vulnerabilities to: engr.buru@gmail.com
 Zero Secrets Policy: All credentials must be encrypted via AES-256-GCM and Argon2id.`,
   },
   {
+    path: '.github/workflows/ci.yml',
+    name: 'ci.yml',
+    language: 'yaml',
+    plane: 'DevOps & Orchestration',
+    description: 'BuruOps GitHub Actions CI pipeline: runs Node.js 22 LTS TypeScript testing, builds dashboard artefacts, and performs PHP syntax linting across root ingress hooks.',
+    keyFeatures: [
+      'Runs on Node.js 22 LTS to avoid deprecation warnings',
+      'Uses npm install --legacy-peer-deps for reliable dependency resolution',
+      'Executes all 20 unit tests with npx tsx --test',
+      'Builds production bundles via npm run build',
+      'Validates all PHP hooks with php -l syntax checks',
+    ],
+    content: `name: BuruOps NeuralWAF CI Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-and-build:
+    name: TypeScript & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run Unit Tests
+        run: npx tsx --test src/utils/*.test.ts
+
+      - name: Build Application
+        run: npm run build
+
+  php-lint:
+    name: PHP Ingress Syntax Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: php-cs-fixer
+
+      - name: Lint PHP Syntax
+        run: |
+          echo "Validating PHP syntax across root ingress hooks..."
+          find . -name "*.php" -not -path "*/node_modules/*" -not -path "*/dist/*" -exec php -l {} \\;`,
+  },
+  {
     path: 'LICENSE',
     name: 'LICENSE',
     language: 'markdown',

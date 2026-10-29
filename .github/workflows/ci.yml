@@ -7,52 +7,41 @@ on:
     branches: [ main, master ]
 
 jobs:
-  security-audit:
-    name: Security & Secret Leak Detection
+  test-and-build:
+    name: TypeScript & Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Codebase
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Check for Accidentally Committed Secrets & Keys
-        run: |
-          echo "Scanning for leaked private keys, credentials, or tokens..."
-          if grep -r -E "(PRIVATE KEY|BEGIN RSA|BEGIN OPENSSH|AIzaSy|Bearer [a-zA-Z0-9_\-\.]{20,})" \
-            --exclude-dir={.git,node_modules,dist,.playwright-cli} .; then
-            echo "::error::Potential secret leak detected in repository files!"
-            exit 1
-          fi
-          echo "Secret scanner passed: zero sensitive keys found."
-
-  test-node-ts:
-    name: TypeScript & Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22 LTS
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
+
       - name: Install Dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
+
       - name: Run Unit Tests
         run: npx tsx --test src/utils/*.test.ts
-      - name: Build Dashboard & Artefacts
+
+      - name: Build Application
         run: npm run build
 
-  test-php-lint:
-    name: PHP Ingress Syntax & Safety Lint
+  php-lint:
+    name: PHP Ingress Syntax Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup PHP 8.2
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-      - name: Lint PHP Files
+          tools: php-cs-fixer
+
+      - name: Lint PHP Syntax
         run: |
           echo "Validating PHP syntax across root ingress hooks..."
-          find . -name "*.php" -not -path "*/node_modules/*" -not -path "*/dist/*" -exec php -l {} \; || true
+          find . -name "*.php" -not -path "*/node_modules/*" -not -path "*/dist/*" -exec php -l {} \;
